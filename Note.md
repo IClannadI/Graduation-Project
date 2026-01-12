@@ -43,6 +43,10 @@
         - 由于语言的离散型，易于分割，因此非常适合language modeling
   - 近似概率密度
     - 变分自动编码器VAE (Variational autoencoder, VAE)
+      - VAE 通过编码器从原始数据$x$中学习潜变量的后验分布$q(z \mid x)$，训练完成后，可以从先验分布$p(z)$中取样潜变量 $z$，再通过解码器生成新的数据样本。
+      - 目标：利用最大似然估计，那么就需要计算$p(x)$，根据贝叶斯定理，$p(x)=\dfrac{p(x|z)}{p(z|x)}p(z)$
+        - $p(x|z)$可以用decoder计算
+        - $p(z|x)$可以用另一个神经网络学习从而近似表示
 - 隐式概率密度（implicit density)
   - 直接型
     - GAN

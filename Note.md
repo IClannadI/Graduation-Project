@@ -49,7 +49,11 @@
         - $p(z|x)$可以用另一个神经网络学习从而近似表示
 - 隐式概率密度（implicit density)
   - 直接型
-    - GAN
+    - 生成对抗网络(Genrative Adversarial Networks, GANs)
+    - 不直接对$p(x)$进行建模
+      - 通过一个神经网络（Generative Model）来生成fake data，然后引入另一个神经网络（Discriminator Network）来判别fake data为real还是fake
+      - 这两个网络相互对抗，互相促进：当判别器能够很好地识别fake data时，生成器必须生成更加逼真的fake data，最终我们希望生成器能够模拟物理真实世界中的生成器，生成近似真实的data
+    - 难以训练与验证
   - 非直接型
-    - Diffusion model
+    - Diffusion model (Rectified Flow)
 

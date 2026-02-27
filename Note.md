@@ -31,7 +31,7 @@
 - **为什么选择生成模型**
   - 当一个输入y对应多个不同的输出x时，我们需要将$p(x|y)$建模
 
-##### 1.1.1.2 [生成模型分类](https://github.com/IClannadI/Graduation-Project/blob/main/inference%20material/papers/tutorial%20on%20generative%20model.pdf)
+##### 1.1.1.2 生成模型分类
 
 - 显式概率密度（Explicit density)
   - 可解概率密度
@@ -50,10 +50,115 @@
 - 隐式概率密度（implicit density)
   - 直接型
     - 生成对抗网络(Genrative Adversarial Networks, GANs)
-    - 不直接对$p(x)$进行建模
+      - 不直接对$p(x)$进行建模
       - 通过一个神经网络（Generative Model）来生成fake data，然后引入另一个神经网络（Discriminator Network）来判别fake data为real还是fake
       - 这两个网络相互对抗，互相促进：当判别器能够很好地识别fake data时，生成器必须生成更加逼真的fake data，最终我们希望生成器能够模拟物理真实世界中的生成器，生成近似真实的data
     - 难以训练与验证
   - 非直接型
-    - Diffusion model (Rectified Flow)
+    - Diffusion model
+
+#### 1.1.2 什么是DM
+
+- 先把真实图像一步一步加入噪音，然后学习给它去噪的过程，最后在一个随机噪音上一步步去噪，生成干净的图像。
+
+#### 1.1.3 一类简单的DM：Rectified Flow
+
+##### 训练（Training）
+
+- 在每个iteration，取样以下元素
+  - 噪音：$z \sim P_{noise}$
+  - 样本：$x \sim P_{data}$
+  - 时间步：$t \sim Uniform[0, 1]$
+- $x_t=(1-t)x + tz.\ v=z-x$
+- 训练一个神经网络来预测$v$：$L = \lVert f_\theta(x_t, t) - v \rVert_2^2$
+
+##### 取样（Sampling）
+
+- 设置一个$T$，对于$t$ in $[1. 1-\dfrac{1}{T}, 1-\dfrac{2}{T}, ...0]$:
+  1. $v_t = f_\theta(x_t, t)$
+  2. $x=x-v_t/T$
+- 最后返回“干净”的$x$
+
+##### 参考文献
+
+- Liu et al, “Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow”, 2022
+- Lipman et al, “Flow Matching for Generative Modeling”, 2022
+
+#### 1.1.4 Latent Diffusion Models（现代用于高分辨率图像的扩散模型工作流）
+
+##### 工作流程
+
+- 训练一对encoder和decoder，让image在实际空间和潜在空间转换
+  - 使用VAE训练encoder + decoder，然后使用GAN来训练Decoder，强化输出图像的清晰度
+- 然后保持encoder与decoder的参数不变，训练一个diffusion model在潜在空间去噪
+- 训练diffusion model完成后，在潜在空间随机取样，迭代式的去噪，最后通过decoder生成image
+
+##### 参考文献
+
+- Esser et al, “Scaling Rectified Flow Transformers for High-Resolution Image Synthesis”, arXiv 2024
+- Rombach et al, “High-Resolution Image Synthesis with Latent Diffusion Models”, CVPR 2022
+
+#### 1.1.5 Diffusion Transformer（DiT）
+
+- 可用于文生图 + 文生视频
+  - 额外需要一个Text encoder
+
+##### 参考文献
+
+- Peebles and Xie, ”Scalable Diffusion Models with Transformers", ICCV 2023
+- Gupta et al, “Photorealistic Video Generation with Diffusion Models”, arXiv 2023 (Dec)
+- OpenAI, “Sora: Creating Video from Text”, 2024 (Feb)
+- Polyak et al, “Movie Gen: A Cast of Media Foundation Models”, arXiv 2024 (Oct)
+- Kong et al, “HunyuanVideo: A Systematic Framework for Large Video Generative Models”, arXiv 2024 (Dec)
+- NVIDIA, “Cosmos World Foundation Model Platform for Physical AI”, arXiv 2025 (Jan)
+- Team Wan, “Wan: Open and Advanced Large-Scale Video Generative Models”, arXiv 2025 (March)
+
+#### 1.1.6 Diffusion 蒸馏（Distillation）
+
+- 由于采样阶段Diffusion model是逐步去噪，因此一次完整去噪需要使用Diffusion model多次，通过蒸馏可以减少去噪次数
+
+##### 参考文献
+
+- Salimans and Ho, “Progressive Distillation for Fast Sampling of Diffusion Models”, ICLR 2022
+- Song et al, “Consistency Models”, ICML 2023
+- Sauer et al, “Adversarial Diffusion Distillation”, ECCV 2024
+- Sauer et al, “Fast High-Resolution Image Synthesis with Latent Adversarial Diffusion Distillation”, arXiv 2024
+- Lu and Song, “Simplifying, Stabilizing and Scaling Consistency Models”, ICLR 2025
+- Salimans et al, “Multistep Distillation of Diffusion Models via Moment Matching”, NeurIPS 2025
+
+#### 1.1.7 广义扩散模型
+
+##### 对于Rectified Flow：
+
+- 取样 $x \sim P_{data}$， $z \sim P_{noise}$ 
+
+- 取样$t \sim P_t$
+
+- 设$x_t=(1-t)x + tz$
+- 设$v_{gt}=z-x$
+- 计算$v_{pred}= f_\theta(x_t, t)$
+
+- 计算损失：$L = \lVert v_{gt}-v_{pred} \rVert_2^2$
+
+##### 对于广义扩散模型
+
+- 取样 $x \sim P_{data}$， $z \sim P_{noise}$ 
+
+- 取样$t \sim P_t$
+
+- 设$x_t=a(t)x + b(t)z$
+- 设$v_{gt}=c(t)z+d(t)x$
+- 计算$v_{pred}= f_\theta(x_t, t)$
+
+- 计算损失：$L = \lVert v_{gt}-v_{pred} \rVert_2^2$
+
+##### 从广义扩散模型到Rectified Flow：
+
+- $a(t)=1-t,\ b(t)=t,\ c(t)=-1,\ d(t)=1$
+
+##### 如何从不同视角看待Diffusion model？
+
+- 参考[博客](https://sander.ai/2023/07/20/perspectives.html)
+
+
 
